@@ -15,6 +15,7 @@ import java.util.HashMap;
  * 
  */
 public class HotelServer {
+	
 
 	private static int hotelNumber = 1;
 	public static void main(String[] args) {
