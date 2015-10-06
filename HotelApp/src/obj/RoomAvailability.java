@@ -28,7 +28,7 @@ public class RoomAvailability {
 		}
 		return 0;
 	}
-	
+
 	public boolean reserveRoom(RoomType r) {
 		boolean success = true;
 		if (getRoomsAvailable(r) > 0) {
@@ -46,11 +46,11 @@ public class RoomAvailability {
 		} else {
 			success = false;
 		}
-		
+
 		return success;
 	}
-	
-	public boolean removeReservation(RoomType r){
+
+	public boolean removeReservation(RoomType r) {
 		boolean success = true;
 		if (getRoomsAvailable(r) > 0) {
 			switch (r) {
@@ -67,8 +67,16 @@ public class RoomAvailability {
 		} else {
 			success = false;
 		}
-		
+
 		return success;
+	}
+
+	@Override
+	public String toString() {
+		String s = "Rooms booked:\n" + "Single: " + roomsAvailable[0]
+				+ "\nDouble: " + roomsAvailable[1] + "\nFamily: "
+				+ roomsAvailable[2];
+		return s;
 	}
 
 }

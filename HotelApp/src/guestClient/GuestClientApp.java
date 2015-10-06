@@ -7,7 +7,7 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import hotelServer.HotelCommInterface;
+import hotelServer.HotelGuestInterface;
 import hotelServer.HotelImpl;
 import obj.RoomType;
 /**

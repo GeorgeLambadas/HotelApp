@@ -4,11 +4,11 @@
 package hotelServer;
 
 import java.rmi.RemoteException;
+
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Calendar;
 import java.util.HashMap;
 
-import obj.Hotel;
 import obj.Reservation;
 import obj.RoomAvailability;
 import obj.RoomType;
@@ -18,7 +18,7 @@ import obj.RoomType;
  * 
  */
 public class HotelImpl extends UnicastRemoteObject implements
-		HotelCommInterface {
+		HotelGuestInterface, HotelManagerInterface {
 
 	/**
 	 * 
@@ -34,7 +34,15 @@ public class HotelImpl extends UnicastRemoteObject implements
 	 */
 	protected HotelImpl(String hotelName) throws RemoteException {
 		super();
+		System.out.println(hotelName);
 		this.hotelName = hotelName;
+
+		reservationDetails = new HashMap<Integer, Reservation>();
+
+		roomsAvailable = new HashMap<Integer, RoomAvailability>();
+		for (int i = 0; i < 365; i++) {
+			roomsAvailable.put(i, new RoomAvailability(new int[] { 5, 5, 5 }));
+		}
 	}
 
 	/*
@@ -48,23 +56,51 @@ public class HotelImpl extends UnicastRemoteObject implements
 			Calendar checkInDate, Calendar checkOutDate) {
 		// TODO make atomic
 		boolean success = true;
-
-		if (h == hotelName) {
-			boolean thereAreRooms = checkAvailability(guestID, h, r,
-					checkOutDate, checkOutDate);
+		if (h.equals(hotelName)) {
+			boolean thereAreRooms = checkIfRoomAvailable(guestID, h, r,
+					checkInDate, checkOutDate);
 			if (thereAreRooms) {
+				reservationDetails.put(guestID, new Reservation(guestID,
+						checkInDate, checkOutDate, r));
 				for (int i = 0; i < checkOutDate.get(Calendar.DAY_OF_YEAR)
 						- checkInDate.get(Calendar.DAY_OF_YEAR)
 						&& thereAreRooms; i++) {
 					success &= roomsAvailable.get(
 							checkInDate.get(Calendar.DAY_OF_YEAR) + i)
 							.reserveRoom(r);
+					System.out.println("reserved: "
+							+ (checkInDate.get(Calendar.DAY_OF_YEAR) + i));
 				}
 			} else {
 				success = false;
 			}
+		} else {
+			// TODO get info from other hotel.
 		}
+
 		return success;
+	}
+
+	/**
+	 * @param guestID
+	 * @param h
+	 * @param r
+	 * @param checkInDate
+	 * @param checkOutDate
+	 * @return
+	 */
+	private boolean checkIfRoomAvailable(int guestID, String h, RoomType r,
+			Calendar checkInDate, Calendar checkOutDate) {
+		boolean thereAreRoomsAvailable = true;
+		for (int i = 0; i < checkOutDate.get(Calendar.DAY_OF_YEAR)
+				- checkInDate.get(Calendar.DAY_OF_YEAR)
+				&& thereAreRoomsAvailable; i++) {
+			thereAreRoomsAvailable = roomsAvailable.get(
+					checkInDate.get(Calendar.DAY_OF_YEAR) + i)
+					.getRoomsAvailable(r) > 0;
+		}
+
+		return thereAreRoomsAvailable;
 	}
 
 	/*
@@ -78,33 +114,38 @@ public class HotelImpl extends UnicastRemoteObject implements
 			Calendar cancelStart, Calendar cancelEnd) {
 		boolean success = true;
 		Reservation reservation = reservationDetails.get(guestID);
-		int cancelStartDay = cancelStart.get(Calendar.DAY_OF_YEAR), cancelEndDay = cancelEnd.get(Calendar.DAY_OF_YEAR);
-		int reservationStart = reservation.getStartDate().get(Calendar.DAY_OF_YEAR), 
-				reservationEnd = reservation.getEndDate().get(Calendar.DAY_OF_YEAR);
 
-		if ( cancelStartDay <= reservationStart && reservationEnd <= cancelEndDay) {
+		int cancelStartDay = cancelStart.get(Calendar.DAY_OF_YEAR), cancelEndDay = cancelEnd
+				.get(Calendar.DAY_OF_YEAR);
+		int reservationStart = reservation.getStartDate().get(
+				Calendar.DAY_OF_YEAR), reservationEnd = reservation
+				.getEndDate().get(Calendar.DAY_OF_YEAR);
+		if (cancelStartDay <= reservationStart
+				&& reservationEnd <= cancelEndDay) {
 			reservationDetails.remove(guestID);
-			for(int i = 0; i + reservationStart < reservationEnd; i++) {
+			for (int i = 0; i + reservationStart < reservationEnd; i++) {
 				roomsAvailable.get(reservationStart + i).removeReservation(r);
 			}
-		} else if (cancelStartDay <= reservationStart && reservationStart <= cancelEndDay && cancelEndDay <= reservationEnd) {
+		} else if (cancelStartDay <= reservationStart
+				&& reservationStart <= cancelEndDay
+				&& cancelEndDay <= reservationEnd) {
 			cancelEnd.add(Calendar.DATE, 1);
 			reservationDetails.get(guestID).setStartDate(cancelEnd);
-			for(int i = 0; i + reservationStart < cancelEndDay; i++) {
+			for (int i = 0; i + reservationStart < cancelEndDay + 1; i++) {
 				roomsAvailable.get(reservationStart + i).removeReservation(r);
 			}
-		} else if (reservationStart <= cancelStartDay && cancelStartDay <= reservationEnd && reservationEnd <= cancelEndDay) {
-			cancelStart.add(Calendar.DATE, -1 );
+		} else if (reservationStart <= cancelStartDay
+				&& cancelStartDay <= reservationEnd
+				&& reservationEnd <= cancelEndDay) {
+			cancelStart.add(Calendar.DATE, -1);
 			reservationDetails.get(guestID).setEndDate(cancelStart);
-			for(int i = 0; i + cancelStartDay < reservationEnd; i++) {
+			for (int i = 0; i + cancelStartDay < reservationEnd; i++) {
 				roomsAvailable.get(cancelStartDay + i).removeReservation(r);
 			}
-		} else if (reservationStart <= cancelStartDay && cancelEndDay <= reservationEnd) {
-			//TODO remove reservation
-			// new reservation(resStart to cancelStart)
-			// new reservation(cancelEnd to resEnd)
+		} else {
+			success = false;
 		}
-		
+
 		return success;
 	}
 
@@ -115,19 +156,20 @@ public class HotelImpl extends UnicastRemoteObject implements
 	 * obj.RoomType, java.util.Calendar, java.util.Calendar)
 	 */
 	@Override
-	public boolean checkAvailability(int guestID, String h, RoomType r,
+	public String checkAvailability(int guestID, String h, RoomType r,
 			Calendar checkInDate, Calendar checkOutDate) {
-		boolean thereAreRooms = true;
-		return true;
-		/*for (int i = 0; i < checkOutDate.get(Calendar.DAY_OF_YEAR)
+		// TODO remake this entire thing to include multiple hotels
+		int numberOfRooms = Integer.MAX_VALUE;
+		for (int i = 0; i < checkOutDate.get(Calendar.DAY_OF_YEAR)
 				- checkInDate.get(Calendar.DAY_OF_YEAR)
-				&& thereAreRooms; i++) {
-			thereAreRooms = roomsAvailable.get(
-					checkInDate.get(Calendar.DAY_OF_YEAR) + i)
-					.getRoomsAvailable(r) > 0;
+				&& numberOfRooms > 0; i++) {
+			numberOfRooms = Math.min(
+					roomsAvailable.get(
+							checkInDate.get(Calendar.DAY_OF_YEAR) + i)
+							.getRoomsAvailable(r), numberOfRooms);
 		}
 
-		return thereAreRooms;*/
+		return "Preferred hotel: " + numberOfRooms;
 	}
 
 	public String getName() {

@@ -14,7 +14,7 @@ import obj.RoomType;
  * @author George Lambadas 7077076
  *
  */
-public interface HotelCommInterface extends Remote {
+public interface HotelGuestInterface extends Remote {
 	
 	/**
 	 * Method to be remotely invoked by client to reserve a room of a specified type between specified dates.
@@ -45,9 +45,9 @@ public interface HotelCommInterface extends Remote {
 	 * @param r room type the guest desires
 	 * @param checkInDate start date of availability check
 	 * @param checkOutDate end date of availability check
-	 * @return
+	 * @return how many rooms are available
 	 */
-	public boolean checkAvailability(int guestID, String h, RoomType r, Calendar checkInDate, Calendar checkOutDate) throws RemoteException;
+	public String checkAvailability(int guestID, String h, RoomType r, Calendar checkInDate, Calendar checkOutDate) throws RemoteException;
 
 
 }

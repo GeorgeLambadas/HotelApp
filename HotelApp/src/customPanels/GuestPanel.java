@@ -33,13 +33,13 @@ public class GuestPanel extends JPanel {
 
 	private GuestClient manager;
 	private JCalendar calendarStartDate, calendarEndDate;
-	private JComboBox roomTypeCombobox;
+	private JComboBox<RoomType> roomTypeCombobox;
 	private String[] hotelNames;
 	private JLabel lblHotel;
-	private JComboBox hotelCombobox;
+	private JComboBox<String> hotelCombobox;
 	private JButton btnSubmit;
 	private JLabel lblAction;
-	private JComboBox actionCombobox;
+	private JComboBox<String> actionCombobox;
 
 	/**
 	 * @param manager
@@ -150,7 +150,7 @@ public class GuestPanel extends JPanel {
 				String hotelName, action;
 				RoomType r;
 				Calendar start, end;
-
+				System.out.println("ninja1");
 				hotelName = (String) GuestPanel.this.hotelCombobox.getSelectedItem();
 				action = (String) GuestPanel.this.actionCombobox.getSelectedItem();
 
@@ -158,11 +158,12 @@ public class GuestPanel extends JPanel {
 
 				start = GuestPanel.this.calendarStartDate.getCalendar();
 				end = GuestPanel.this.calendarEndDate.getCalendar();
-
+				System.out.println("ninja2");
 				// TODO test getting data correctly and make this handler work
 
 				// validate dates
 				if (start.compareTo(end) < 0) {
+					System.out.println("ninja3");
 					// handle different actions
 					if (action == "Check Availability") {
 						GuestPanel.this.manager.checkAvailability(

@@ -4,11 +4,11 @@
 package hotelServer;
 
 import java.net.MalformedURLException;
+
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.HashMap;
 
 /**
  * @author George Lambadas 7077076
@@ -24,16 +24,16 @@ public class HotelServer {
 
 		try {
 			Registry registry = LocateRegistry.getRegistry();
-			if(registry == null)
-				LocateRegistry.createRegistry(RMIPortNum);
-
-			HotelCommInterface hotel = new HotelImpl("hotel" + hotelNumber);
+			if (registry == null)
+				registry = LocateRegistry.createRegistry(RMIPortNum);
+			HotelGuestInterface hotel = new HotelImpl("hotel" + 3);
 
 			hotelNumber++;
 			
 			String registryURL = "rmi://localhost:" + RMIPortNum + "/"
 					+ ((HotelImpl) hotel).getName();
 			Naming.rebind(registryURL, hotel);
+			System.out.println("Hello Server ready.");
 		} catch (RemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -41,6 +41,5 @@ public class HotelServer {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("Hello Server ready.");
 	}
 }
